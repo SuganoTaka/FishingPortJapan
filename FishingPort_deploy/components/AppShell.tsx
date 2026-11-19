@@ -81,12 +81,22 @@ export default function AppShell({ googleApiKey = "", googleMapId = "DEMO_MAP_ID
         if (!r.ok) throw new Error(`港データの取得に失敗 (${r.status})`);
         return (await r.json()) as PortDataset;
       }),
-      fetch("/data/fish-species.json")
-        .then(async (r) => {
-          if (!r.ok) throw new Error("魚データの取得に失敗");
-          return (await r.json()) as FishDataset;
-        })
-        .catch(() => null),
+      (async () => {
+        // スプレッドシート運用なら /api/fish が正。未設定・失敗時は同梱JSONにフォールバック
+        try {
+          const r = await fetch("/api/fish");
+          if (r.ok) return (await r.json()) as FishDataset;
+        } catch {
+          /* フォールバックへ */
+        }
+        try {
+          const r = await fetch("/data/fish-species.json");
+          if (r.ok) return (await r.json()) as FishDataset;
+        } catch {
+          /* 取得できなければ魚情報なしで動かす */
+        }
+        return null;
+      })(),
     ])
       .then(([ports, fishData]) => {
         if (!alive) return;

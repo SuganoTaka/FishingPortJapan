@@ -70,3 +70,16 @@ export function parseLatLon(url: URL): { lat: number; lon: number } | null {
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
   return { lat, lon };
 }
+
+export async function fetchText(url: string, timeoutMs = 12000): Promise<string> {
+  const d = getDispatcher();
+  const res = await undiciFetch(url, {
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: { accept: "text/csv,text/plain,*/*" },
+    ...(d ? { dispatcher: d } : {}),
+  });
+  if (!res.ok) {
+    throw new Error(`upstream ${res.status} ${res.statusText ?? ""}`.trim());
+  }
+  return await res.text();
+}
