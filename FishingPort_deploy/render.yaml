@@ -10,9 +10,7 @@ services:
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
-        value: "20"
-      - key: NODE_ENV
-        value: production
+        value: "22"
       # Google マップを使う場合のみ（未設定なら国土地理院タイルで表示）
       # - key: GOOGLE_MAPS_API_KEY
       #   sync: false

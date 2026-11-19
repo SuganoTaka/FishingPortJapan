@@ -24,7 +24,7 @@
 | Health Check Path | `/` |
 | Plan | Free |
 
-4. 環境変数は**設定不要**（`NODE_VERSION=20` だけ任意で追加）
+4. 環境変数は `NODE_VERSION=22` のみ（`NODE_ENV` は**設定しない**。ビルド時に devDependencies が入らなくなります）
 5. **Create Web Service** → 3〜5分でビルド完了、`https://<name>.onrender.com` が公開URLになります
 
 ## 3. 公開後の注意
@@ -47,3 +47,30 @@ scripts/        港データ再生成スクリプト（デプロイには不要�
 
 港データ（3,925件）と魚データ（51種）は `public/data/` に同梱済みなので、
 デプロイ時に追加のダウンロードは発生しません。
+
+## トラブルシューティング
+
+### ビルドが `npm error`（使い方の一覧）で落ちる
+ビルドが **package.json のない場所**で走っています。原因はほぼ次のどちらかです。
+
+1. **フォルダが入れ子になっている**（リポジトリ直下に `FishingPort_deploy/` がある）
+   - GitHub のリポジトリ直下に `app/`、`package.json`、`render.yaml` が**直接**並んでいる必要があります
+   - 直っていない場合は、リポジトリ直下で「Add file → Upload files」を開き、
+     **`FishingPort_deploy` フォルダの中身を選択して**アップロードし直してください（フォルダごと入れない）
+   - フォルダを残したい場合は、Render のサービス設定で **Root Directory** に `FishingPort_deploy` を指定します
+
+2. **package-lock.json と package.json の不整合**
+   - `render.yaml` のビルドコマンドを `npm install --no-audit --no-fund && npm run build` にしてあるので、この場合は解消されます
+
+### 起動はするがページが表示されない
+- Start Command が `npm start` になっているか確認（`npm run dev` は不可）
+- Render のログで `Ready on` が出ているか確認
+- 無料プランはスリープ復帰に 30〜60 秒かかります
+
+### ビルドが `npm error Exit handler never called!` で落ちる
+`package-lock.json` の `resolved`（取得先URL）が、その環境専用の社内 npm ミラーを指していると発生します。
+Render からそのホストに到達できないため、全パッケージの取得に失敗して npm が異常終了します。
+
+- 対処: `resolved` が `https://registry.npmjs.org/...` になっている `package-lock.json` を使う
+- 確認方法: `package-lock.json` 内を `"resolved": "https://registry.npmjs.org/` で検索し、
+  それ以外のホスト（`http://…/repository/npm-proxy/` など）が無いこと
